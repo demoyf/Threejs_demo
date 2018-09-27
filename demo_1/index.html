@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+
+    </style>
+</head>
+<body>
+	<div id="canvas-frame"></div>
+	<script type="text/javascript" src="./../libs/three.js"></script>
+	<script type="text/javascript">
+		var ThreeUtil = function(){
+			this.renderer;
+			this.scene;
+			this.camera;
+			this.group;
+			this.light;
+			this.width;
+			this.height;
+			this.ele;
+		}
+		ThreeUtil.prototype = {
+			init:function(){
+				this._initThree()._initScene()._initCamera()._initLight()._initGroup()._initEle();
+				return this;
+			},
+			_initThree:function(){
+				this.ele = document.querySelector("#canvas-frame");
+				if (!this.ele) {
+					throw new Error("should crate canvas-frame ele first");
+				}
+				this.width = this.ele.clientWidth;
+				this.height = this.ele.clientHeight;
+				this.renderer = new THREE.WebGLRenderer({
+					antialias:true
+				});
+				this.renderer.setSize(this.width,this.height);
+				this.ele.append(this.renderer.domElement);
+				this.renderer.setClearColor(0x000000,1.0);
+				return this;
+			},
+			_initScene:function(){
+				this.scene = new THREE.Scene();
+				this.scene.position.set(50,50,0);
+				return this;
+			},
+			_initCamera:function(){
+			// 45，应该可以理解为，相机拍摄时的对焦距离，越小，则越靠近原点。物体也就表现得越大
+			// 0.1：则是拍摄时，距离拍摄点的最小距离（可视区域）但是不影响大小。10000，就是距离拍摄点的最远距离，超过不可见
+				this.camera = new THREE.PerspectiveCamera(45,this.width/this.height,0.1,10000);
+				this.camera.position.set(0,0,150);
+				// up 表明相机向上的坐标轴，x，y，z ：1 0 0 表明坐标周向上是x轴，相对来说就是相机旋转，所以看到的视图也是被旋转的。
+				this.camera.up.x =0;
+				this.camera.up.y =1;
+				this.camera.up.z =0;
+				this.camera.lookAt(new THREE.Vector3(0,0,0)); 
+				return this;
+			},
+			_initLight:function(){
+				this.light = new THREE.AmbientLight(0x000000);
+				this.light.position = new THREE.Vector3(100,100,500);
+				this.scene.add(this.light);
+				return this;
+			},
+			_initGroup:function(){
+				this.group = new THREE.Group();
+				return this;
+			},
+			_initEle:function(){
+                var geometry = new THREE.Geometry();
+                geometry.vertices.push( new THREE.Vector3( -5, 0, 0 ) );
+                geometry.vertices.push( new THREE.Vector3( 5, 0, 0 ) );
+                for ( var i = 0; i <= 10; i ++ ) {
+                    for(var j = 0;j<=10;j++){
+                        var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xFFFFFF, opacity: 0.2 } ) );
+                        line.position.x = ( j * 10 ) - 100;
+                        line.position.y = ( i * 10 ) - 100;
+                        this.scene.add( line );
+                        var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xFFFFFF, opacity: 0.2 } ) );
+                        line.position.x = ( j * 10 ) - 100;
+                        line.position.y = ( i * 10 ) - 100;
+                        line.rotation.z = 90 * Math.PI / 180;
+                        this.scene.add( line );
+                    }
+                }
+				return this;
+			},
+			appendObj:function(ele){
+				if (!this.scene) {
+					this.init();
+				}
+				this.scene.add(ele);
+			},
+			render:function(){
+				var self = this;
+				this.renderer.render(this.scene,this.camera);
+			}
+		}
+		var temp = new ThreeUtil();
+		temp.init().render();
+	</script>
+</body>
+</html>

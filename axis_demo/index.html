@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+    </style>
+</head>
+<body>
+	<div id="canvas-frame"></div>
+	<script type="text/javascript" src="./../libs/three.js"></script>
+	<script type="text/javascript" src="./../libs/dat.gui.js"></script>
+	<script type="text/javascript">
+		var ThreeUtil = function(){
+			this.renderer;
+			this.scene;
+			this.camera;
+			this.group;
+			this.light;
+			this.width;
+			this.height;
+			this.ele;
+		}
+		ThreeUtil.prototype = {
+			init:function(){
+				this._initThree()._initScene()._initDatUI()._initAxisHelper()._initCamera()._initLight()._initGroup()._initEle();
+				return this;
+			},
+			_initThree:function(){
+				this.ele = document.querySelector("#canvas-frame");
+				if (!this.ele) {
+					throw new Error("should crate canvas-frame ele first");
+				}
+				this.width = this.ele.clientWidth;
+				this.height = this.ele.clientHeight;
+				this.renderer = new THREE.WebGLRenderer({
+					antialias:true
+				});
+				this.renderer.setSize(this.width,this.height);
+				this.ele.append(this.renderer.domElement);
+				this.renderer.setClearColor(0x000000,1.0);
+				return this;
+			},
+			_initDatUI:function(){
+				// 加入dat.GUI
+				function controlFun(){
+					this.positionX = 0;
+					this.positionY = 0;
+					this.positionZ = 150;
+					this.cubeX = 0;
+					this.cubeY = 0;
+					this.cubeZ = 0;
+					this.cubeRx = 0.01;
+					this.cubeRy = 0.01;
+					this.cubeRz = 0.01;
+				}
+				var control = new controlFun();
+				var gui = new dat.GUI();
+				gui.add(control,'positionX',-100,100);
+				gui.add(control,'positionY',-100,100);
+				gui.add(control,'positionZ',-300,300);
+				gui.add(control,'cubeX',-100,100);
+				gui.add(control,'cubeY',-100,100);
+				gui.add(control,'cubeZ',-100,100);
+				gui.add(control,'cubeRx',-1,1);
+				gui.add(control,'cubeRy',-1,1);
+				gui.add(control,'cubeRz',-1,1);
+				this.control = control;
+				return this;
+			},
+			_initAxisHelper:function(){
+				// 辅助坐标轴
+				var axis = new THREE.AxisHelper(100);
+				this.scene.add(axis);
+				return this;
+			},
+			_initScene:function(){
+				this.scene = new THREE.Scene();
+				this.scene.position.set(0,0,0);
+				return this;
+			},
+			_initCamera:function(){
+				this.camera = new THREE.PerspectiveCamera(45,this.width/this.height,0.1,10000);
+				this.camera.position.set(this.control.positionX,this.control.positionY,this.control.positionZ);
+				this.camera.lookAt(new THREE.Vector3(0,0,0)); 
+				return this;
+			},
+			_initLight:function(){
+				this.light = new THREE.AmbientLight(0x000000);
+				this.light.position = new THREE.Vector3(100,100,10000);
+				this.scene.add(this.light);
+				return this;
+			},
+			_initGroup:function(){
+				this.group = new THREE.Group();
+				return this;
+			},
+			_initEle:function(){
+				// wireframe 
+				var cubeGeometry = new THREE.BoxGeometry(6, 6, 6, 2, 3, 1);
+				var cubeMaterial = new THREE.MeshBasicMaterial({
+				    wireframe : true,
+				    color:0xffffff
+				});
+				var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				cube.position.set(this.control.cubeX,this.control.cubeY,this.control.cubeZ);
+				cube.rotation.set(this.control.cubeRx,this.control.cubeRy,this.control.cubeRz)
+				this.scene.add(cube);
+				this.cube = cube;
+				return this;
+			},
+			appendObj:function(ele){
+				if (!this.scene) {
+					this.init();
+				}
+				this.scene.add(ele);
+			},
+			render:function(){
+				var self = this;
+				requestAnimationFrame(function(){
+					self.camera.position.set(self.control.positionX,self.control.positionY,self.control.positionZ);
+					self.cube.position.set(self.control.cubeX,self.control.cubeY,self.control.cubeZ);
+					self.cube.rotation.set(self.control.cubeRx,self.control.cubeRy,self.control.cubeRz);
+					self.renderer.render(self.scene,self.camera);
+					self.render();
+				});
+			}
+		}
+		var temp = new ThreeUtil();
+		temp.init().render();
+	</script>
+</body>
+</html>

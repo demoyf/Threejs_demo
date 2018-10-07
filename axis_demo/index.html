@@ -60,18 +60,34 @@
 					this.cubeRx = 0.01;
 					this.cubeRy = 0.01;
 					this.cubeRz = 0.01;
+					this.upX = 0.01;
+					this.upY = 0.99;
+					this.upZ = 0.01;
 				}
 				var control = new controlFun();
 				var gui = new dat.GUI();
-				gui.add(control,'positionX',-100,100);
-				gui.add(control,'positionY',-100,100);
-				gui.add(control,'positionZ',-300,300);
-				gui.add(control,'cubeX',-100,100);
-				gui.add(control,'cubeY',-100,100);
-				gui.add(control,'cubeZ',-100,100);
-				gui.add(control,'cubeRx',-1,1);
-				gui.add(control,'cubeRy',-1,1);
-				gui.add(control,'cubeRz',-1,1);
+				// 添加分组
+				var f1 = gui.addFolder('cameraPosition')
+				// 相机的position
+				f1.add(control,'positionX',-100,100);
+				f1.add(control,'positionY',-100,100);
+				f1.add(control,'positionZ',-300,300);
+				var f2 = gui.addFolder('cubePosition');
+				// 物体的position
+				f2.add(control,'cubeX',-100,100);
+				f2.add(control,'cubeY',-100,100);
+				f2.add(control,'cubeZ',-100,100);
+				var f3 = gui.addFolder('cubeRotation');
+
+				// 物体的rotation
+				f3.add(control,'cubeRx',-1,1);
+				f3.add(control,'cubeRy',-1,1);
+				f3.add(control,'cubeRz',-1,1);
+
+				var f4 = gui.addFolder('cameraUp');
+				f4.add(control,'upX',-1,1);
+				f4.add(control,'upY',-1,1);
+				f4.add(control,'upZ',-1,1);
 				this.control = control;
 				return this;
 			},
@@ -89,6 +105,9 @@
 			_initCamera:function(){
 				this.camera = new THREE.PerspectiveCamera(45,this.width/this.height,0.1,10000);
 				this.camera.position.set(this.control.positionX,this.control.positionY,this.control.positionZ);
+				this.camera.up.y = this.control.upY;
+				this.camera.up.x = this.control.upX;
+				this.camera.up.z = this.control.upZ;
 				this.camera.lookAt(new THREE.Vector3(0,0,0)); 
 				return this;
 			},
@@ -103,7 +122,7 @@
 				return this;
 			},
 			_initEle:function(){
-				// wireframe 
+				// wireframe 网格绘制
 				var cubeGeometry = new THREE.BoxGeometry(6, 6, 6, 2, 3, 1);
 				var cubeMaterial = new THREE.MeshBasicMaterial({
 				    wireframe : true,
@@ -125,9 +144,14 @@
 			render:function(){
 				var self = this;
 				requestAnimationFrame(function(){
+					// 将gui的值，设置到对应的属性中，并且渲染
 					self.camera.position.set(self.control.positionX,self.control.positionY,self.control.positionZ);
 					self.cube.position.set(self.control.cubeX,self.control.cubeY,self.control.cubeZ);
 					self.cube.rotation.set(self.control.cubeRx,self.control.cubeRy,self.control.cubeRz);
+					self.camera.up.y = self.control.upY;
+					self.camera.up.x = self.control.upX;
+					self.camera.up.z = self.control.upZ;
+					self.camera.lookAt(new THREE.Vector3(0,0,0)); 
 					self.renderer.render(self.scene,self.camera);
 					self.render();
 				});

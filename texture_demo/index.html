@@ -30,7 +30,7 @@
 		}
 		ThreeUtil.prototype = {
 			init:function(){
-				this._initThree()._initScene()._initDatUI()._initAxisHelper()._initCamera()._initMouseEvent()._initLight()._initGroup()._initEle();
+				this._initThree()._initScene().initTarget()._initDatUI()._initAxisHelper()._initCamera()._initLight()._initGroup()._initEle();
 				return this;
 			},
 			_initThree:function(){
@@ -48,16 +48,39 @@
 				this.renderer.setClearColor(0xffffff,1.0);
 				return this;
 			},
+			initTarget:function(){
+				// 创建一个新的场景
+				this.renderTargetScene = new THREE.Scene();
+				this.renderTargetScene.position.set(0,0,0);
+				// 渲染目标
+				this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height);
+				var cubeGeometry = new THREE.BoxGeometry(180, 180, 180, 2, 3, 1);
+				var cubeMaterial = new THREE.MeshBasicMaterial({
+				    color:0xa0a6f8
+				});
+				// 对应的新相机
+				this.targetCamera = new THREE.OrthographicCamera(this.width/-2,this.width/2,this.height/2,this.height/-2,0,10000);
+				this.targetCamera.position.set(0,0,150);
+				this.targetCamera.lookAt(new THREE.Vector3(0,0,0)); 
+				// 新的物体
+				var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				cube.position.set(0,0,0);
+				this.targetCube = cube;
+				this.renderTargetScene.add(cube);
+				return this;
+			},
 			_initDatUI:function(){
 				// 加入dat.GUI
 				function controlFun(){
 					this.positionX = 0;
 					this.positionY = 0;
 					this.positionZ = 150;
+					this.cubeX = 0;
+					this.cubeY = 0;
+					this.cubeZ = 0;
 					this.sceneRx = 0.01;
 					this.sceneRy = 0.01;
 					this.sceneRz = 0.01;
-
 				}
 				var control = new controlFun();
 				var gui = new dat.GUI();
@@ -67,11 +90,15 @@
 				f1.add(control,'positionX',-100,100);
 				f1.add(control,'positionY',-100,100);
 				f1.add(control,'positionZ',-300,300);
-
-				var f2 = gui.addFolder('sceneRx');
-				f2.add(control,'sceneRx',-1,1);
-				f2.add(control,'sceneRy',-1,1);
-				f2.add(control,'sceneRz',-1,1);
+				var f2 = gui.addFolder('cubePosition');
+				// 物体的position
+				f2.add(control,'cubeX',-100,100);
+				f2.add(control,'cubeY',-100,100);
+				f2.add(control,'cubeZ',-100,100);
+				var f3 = gui.addFolder('sceneR');
+				f3.add(control,'sceneRx',-1,1);
+				f3.add(control,'sceneRz',-1,1);
+				f3.add(control,'sceneRy',-1,1);
 				this.control = control;
 				return this;
 			},
@@ -87,7 +114,8 @@
 				return this;
 			},
 			_initCamera:function(){
-				this.camera = new THREE.PerspectiveCamera(45,this.width/this.height,0.1,10000);
+				// this.camera = new THREE.PerspectiveCamera(45,this.width/this.height,0.1,10000);
+				this.camera = new THREE.OrthographicCamera(this.width/-2,this.width/2,this.height/2,this.height/-2,0.1,10000);
 				this.camera.position.set(this.control.positionX,this.control.positionY,this.control.positionZ);
 				this.camera.lookAt(new THREE.Vector3(0,0,0)); 
 				return this;
@@ -98,76 +126,43 @@
 				this.scene.add(this.light);
 				return this;
 			},
-			_initMouseEvent:function(){
-				// 创建Raycaster
-				var raycaster = new THREE.Raycaster();
-    			var mouse = new THREE.Vector2();
-    			var width = this.width;
-    			var height = this.height;
-    			var camera = this.camera;
-    			var scene = this.scene;
-    			window.addEventListener('click',function(event){
-    				// 将二维平面的鼠标x，y点，映射成Three.js中的标准坐标
-    				mouse.x = (event.clientX / width)*2 -1;
-    				mouse.y = (event.clientY / height) * -2 +1;
-    				// 在视点坐标系中形成射线,射线的起点向量是照相机，射线的方向向量是照相机到点击的点。
-    				raycaster.setFromCamera(mouse,camera);				
-    				// 获取到射线穿过的所有对象
-    				var intersects = raycaster.intersectObjects( scene.children );
-    				var tempArr =  [].slice.apply(intersects);
-    				for (var i = tempArr.length - 1; i >= 0; i--) {
-    					tempArr[i].object.material.color.set(0xff00ff);
-    				}
-    				// tempArr[0].object.material.color.set(0xff00ff);
-    			});
-    			return this;
-			},
 			_initGroup:function(){
 				this.group = new THREE.Group();
 				return this;
 			},
 			_initEle:function(){
-				// wireframe 网格绘制
-				var cubeGeometry = new THREE.BoxGeometry(6, 6, 6, 2, 3, 1);
-				for(var i = 0;i<1000;i++){
-					// 设置随机颜色，随机位置，随机的旋转角度
-					var cubeMaterial = new THREE.MeshBasicMaterial({
-					    color:this._randomColor()
-					});
-					var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-					cube.position.set(this._randomPosition(),this._randomPosition(),this._randomPosition());
-					this.scene.add(cube);
-				}
-				return this;
-			},
-			_randomColor:function(){
-				var colorArr = ['1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','0'];
-				var strHex = '0x';
-				for(var i = 0; i < 6; i++) {
-		            var index = Math.round(Math.random() * 15);
-		            strHex += colorArr[index];
-		        }
-		        console.log(strHex);
-				return parseInt(strHex);
-			},
-			_randomPosition:function(){
-				return 55 * ( 3.0 * Math.random() - 1.0 );;
-			},
-			_randomRotation:function(){
-				return Math.random() * Math.PI;
-			},
-			appendObj:function(ele){
 				if (!this.scene) {
 					this.init();
 				}
-				this.scene.add(ele);
+				var cubeGeometry = new THREE.BoxGeometry(160, 160, 160, 2, 3, 1);
+				var target = this.renderTarget;
+				var cubeMaterial = new THREE.MeshBasicMaterial({
+				    color:0xffffff,
+				    map:target.texture
+				});
+				var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				cube.position.set(this.control.cubeX,this.control.cubeY,this.control.cubeZ);
+				this.cube = cube;
+				this.scene.add(cube);
+				return this;
 			},
 			render:function(){
 				var self = this;
 				requestAnimationFrame(function(){
 					// 将gui的值，设置到对应的属性中，并且渲染
 					self.camera.position.set(self.control.positionX,self.control.positionY,self.control.positionZ);
+					self.cube.position.set(self.control.cubeX,self.control.cubeY,self.control.cubeZ);
+					self.cube.rotation.y += 0.01;
+					self.cube.rotation.x += 0.01;
+					// 渲染目标的物体变化
+					self.targetCube.rotation.x += 0.1;
+					self.targetCube.rotation.y += 0.1;
 					self.scene.rotation.set(self.control.sceneRx,self.control.sceneRy,self.control.sceneRz);
+					// 渲染 渲染目标
+					self.renderer.setClearColor(0xffffff,1.0);
+					self.renderer.render(self.renderTargetScene,self.targetCamera,self.renderTarget);
+					self.renderer.setClearColor(0x000000,1.0);
+					// 渲染当前场景
 					self.renderer.render(self.scene,self.camera);
 					self.render();
 				});
